@@ -80,12 +80,16 @@ def phaseOne(objective: Expr, constraints: list[Expr]):
                             maximum = 1
             if not xe:  # All the basics' coefficients are negative; no could be selected.
                 print('LP is not feasible!')
-                exit()  # LP is infeasible
+                return  # LP is infeasible
 
-            index, xl = findLeavingVariable(constraints, xe)
+            index, xl = findLeavingVariable(slack_constraints, xe)
 
-            print(f'{xe} is chosen as entering  & {
-                  xl} is chosen as leaving.', end='\n\n')
+            if not xl:
+                print('LP is unbounded!')
+                return
+
+            print(f'({xe}) is chosen as entering  & ({
+                  xl}) is chosen as leaving.', end='\n\n')
             slack_constraints[index] = pivot(
                 slack_constraints[index], xe, xl)
 

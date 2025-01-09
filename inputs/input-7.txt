@@ -1,0 +1,7 @@
+maximize : 20 * na + 15 * nb
+s.t.:
+3 * na + 4 * nb <= 120
+2 * na + 3 * nb <= 100
+5 * na + 2 * nb <= 150
+na >= 0
+nb >= 0

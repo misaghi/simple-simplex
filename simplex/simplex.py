@@ -16,7 +16,7 @@ def simplex(objective: Expr, constraints: list[Expr]):
                 break
 
     iteration = 1
-    print(f'Dictionary at the end of iteration {
+    print(f'Dictionary at the start of iteration {
         iteration} of the 2nd phase is:')
     print('Objective:', objective)
     print('s.t.:', *constraints, sep='\n')
@@ -44,16 +44,16 @@ def simplex(objective: Expr, constraints: list[Expr]):
             print('Objective:', objective)
             print('s.t.:', *constraints, sep='\n')
             print()
-            exit()
+            return
 
         index, xl = findLeavingVariable(constraints, xe)
 
         if not xl:
             print('LP is unbounded!')
-            exit()
+            return
 
-        print(f'{xe} is chosen as entering  & {
-              xl} is chosen as leaving.', end='\n\n')
+        print(f'({xe}) is chosen as entering  & ({
+              xl}) is chosen as leaving.', end='\n\n')
         constraints[index] = pivot(
             constraints[index], xe, xl)
 

@@ -63,10 +63,15 @@ def normalize(problem_type: str, objective: Expr, constraints: list[Expr]):
             if type(rhs) != Mul and type(rhs) != Symbol and rhs == 0 and len(lhs.args) <= 1:
                 pass
             else:  # Adds sth like Xi - rhs <= 0 to the 4th step's dictionary
+                # Why this part is so long? In some cases the lhs has only variable.
+                # lhs.args returns error in this case.
+                # I had to write to seperate cases for this problem.
                 phase_4_constraints.append(Le(
-                    Mul(sympify(Add(*list(lhs.args), Mul(rhs, -1))), -1), 0))
+                    Mul(sympify(Add(*list(lhs.args), Mul(rhs, -1))), -1), 0)) if len(lhs.args) > 1 else phase_4_constraints.append(Le(
+                        Mul(sympify(Add(lhs, Mul(rhs, -1))), -1), 0))
         else:  # Adds sth like Xi - rhs <= 0 to the 4th step's dictionary
             phase_4_constraints.append(Le(
-                sympify(Add(*list(lhs.args), Mul(rhs, -1))), 0))
+                sympify(Add(*list(lhs.args), Mul(rhs, -1))), 0)) if len(lhs.args) > 1 else phase_4_constraints.append(Le(
+                    sympify(Add(lhs, Mul(rhs, -1))), 0))
 
     return objective, phase_4_constraints
