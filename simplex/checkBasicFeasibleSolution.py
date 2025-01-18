@@ -1,7 +1,7 @@
 from sympy import Expr, Symbol, Mul
 
 
-def checkBaseFeasibleSolution(constraints: list[Expr]):
+def checkBasicFeasibleSolution(constraints: list[Expr]):
     """This function checks if the basic solution is feasible or not.
 
     Args:

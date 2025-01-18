@@ -2,10 +2,16 @@ from sympy import Expr, Mul, Symbol
 from math import inf
 from .pivot import pivot
 from .findLeavingVariable import findLeavingVariable
-from sympy.core.function import _coeff_isneg
+from .findEnteringVariable import findEnteringVariable
 
 
 def simplex(objective: Expr, constraints: list[Expr]):
+    """This function implements the second phase of the Two Phase Method.
+
+    Args:
+        objective (Expr): The objective of previous phases
+        constraints (list[Expr]): The list of the constraints
+    """
     objective_symbols = list(objective.free_symbols)
 
     for symbol in objective_symbols:  # Rewrite the objective with the non basic variables
@@ -16,41 +22,42 @@ def simplex(objective: Expr, constraints: list[Expr]):
                 break
 
     iteration = 1
-    print(f'Dictionary at the start of iteration {
+    print(f'The dictionary at the start of the iteration {
         iteration} of the 2nd phase is:')
     print('Objective:', objective)
     print('s.t.:', *constraints, sep='\n')
     print()
+
+    blacklist = set()
     while True:
         objective_symbols = list(objective.args[1].args)
-        maximum = -inf
-        xe = None
-        for sym in objective_symbols:  # Choose the most positive as entering
-            # if sym's coeff is positive and is not a number
-            if not _coeff_isneg(sym) and (type(sym) == Mul or type(sym) == Symbol):
-                try:
-                    if maximum < sym.args[0]:
-                        xe = sym.args[1]
-                        maximum = sym.args[0]
-                except IndexError:
-                    if maximum < 1:
-                        xe = sym
-                        maximum = 1
-        if not xe:  # All the objective variable coefficients are negative, and we are finished!
+        xe = findEnteringVariable(objective, blacklist)
+        # All the objective variable coefficients are negative, and there are no unbounded variables.
+        # This means we are finished.
+        if not xe and len(blacklist) == 0:
             print('Answer:', objective_symbols[0] if (type(
                 objective_symbols[0]) != Symbol and type(objective_symbols[0]) != Mul) else 0)
-            print(f'Final dictionary was calculated at iteration {
+            print(f'The final dictionary was calculated at the iteration {
                 iteration} of the 2nd phase:')
             print('Objective:', objective)
             print('s.t.:', *constraints, sep='\n')
             print()
             return
 
-        index, xl = findLeavingVariable(constraints, xe)
-
-        if not xl:
+        # There are no candidates to be the entering variables other than unbounded ones.
+        elif not xe and len(blacklist) != 0:
             print('LP is unbounded!')
             return
+
+        index, xl = findLeavingVariable(constraints, xe)
+
+        # This means none of the constraints can define a bound.
+        # The corresponding variable will be added to the blacklist
+        if not xl:
+            blacklist.add(xe)
+            continue
+        else:  # The blacklist may be empty or not. It doesn't matter; we've found a suitable constraint for pivoting
+            blacklist = set()
 
         print(f'({xe}) is chosen as entering  & ({
               xl}) is chosen as leaving.', end='\n\n')
@@ -66,7 +73,7 @@ def simplex(objective: Expr, constraints: list[Expr]):
         objective = objective.subs(
             xe, constraints[index].args[1])
 
-        print(f'Dictionary at the end of iteration {
+        print(f'The dictionary at the end of the iteration {
             iteration} of the 2nd phase is:')
         print('Objective:', objective)
         print('s.t.:', *constraints, sep='\n')

@@ -4,6 +4,7 @@ from math import inf
 from .createSlackForm import createSlackForm
 from .pivot import pivot
 from .findLeavingVariable import findLeavingVariable
+from .findEnteringVariable import findEnteringVariable
 
 
 def phaseOne(objective: Expr, constraints: list[Expr]):
@@ -21,8 +22,15 @@ def phaseOne(objective: Expr, constraints: list[Expr]):
         Symbol('x0'), constraints, phase_one=True)
 
     iteration = 1
+    blacklist = set()
     while True:
         if iteration == 1:  # The first iteration in which x0 must be chosen and entering variable
+            print(f'The dictionary at the start of the iteration {
+                iteration} of the 1st phase is:')
+            print('Objective:', slack_objective)
+            print('s.t.:', *slack_constraints, sep='\n')
+            print()
+
             objective_symbols = list(slack_objective.args)
             for sym in objective_symbols:
                 if _coeff_isneg(sym):
@@ -45,6 +53,9 @@ def phaseOne(objective: Expr, constraints: list[Expr]):
                         xl = slack_var  # Choose the most negative variable as leaving
                         index = i
 
+            print(f'({xe}) is chosen as entering  & ({
+                  xl}) is chosen as leaving.', end='\n\n')
+
             slack_constraints[index] = pivot(  # Do the pivoting
                 slack_constraints[index], xe, xl)
 
@@ -64,29 +75,24 @@ def phaseOne(objective: Expr, constraints: list[Expr]):
                 # There is only -x0 in the objective. z=0 and LP is feasible.
                 # Substitue x0 with 0
                 return [constraint.subs(objective_symbols[1], 0) for constraint in slack_constraints]
-            maximum = -inf
-            xe = None
-            # Choose the most positive as entering
-            for sym in objective_symbols:
-                # sym's coeff is not negative and it is not a number
-                if not _coeff_isneg(sym) and (type(sym) == Mul or type(sym) == Symbol):
-                    try:
-                        if maximum < sym.args[0]:
-                            xe = sym.args[1]
-                            maximum = sym.args[0]
-                    except IndexError:  # The coefficient is 1 but in the expression it is sth like Xi
-                        if maximum < 1:
-                            xe = sym
-                            maximum = 1
-            if not xe:  # All the basics' coefficients are negative; no could be selected.
+
+            xe = findEnteringVariable(slack_objective, blacklist)
+
+            # All the basics' coefficients are negative; no could be selected.
+            if not xe and len(blacklist) < len(objective_symbols):
                 print('LP is not feasible!')
                 return  # LP is infeasible
+            elif not xe and len(blacklist) == len(objective_symbols):
+                print('LP is unbounded!')
+                return
 
             index, xl = findLeavingVariable(slack_constraints, xe)
 
             if not xl:
-                print('LP is unbounded!')
-                return
+                blacklist.add(xe)
+                continue
+            else:
+                blacklist = set()
 
             print(f'({xe}) is chosen as entering  & ({
                   xl}) is chosen as leaving.', end='\n\n')
@@ -102,7 +108,7 @@ def phaseOne(objective: Expr, constraints: list[Expr]):
             slack_objective = slack_objective.subs(
                 xe, slack_constraints[index].args[1])
 
-        print(f'Dictionary at the end of iteration {
+        print(f'The dictionary at the end of the iteration {
               iteration} of the 1st phase is:')
         print('Objective:', slack_objective)
         print('s.t.:', *slack_constraints, sep='\n')

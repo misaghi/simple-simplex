@@ -4,7 +4,7 @@ from sympy import sympify, Eq
 
 def readInput(path: pathlib.Path):
     """How to write input?
-    1. Problem type(minimize or maximize) must be seperated by a ':' from the objective.
+    1. Problem type(minimize or maximize) must be separated by a ':' from the objective.
     2. Every constraint must be written in a new line.
     3. The LP's type can be in lower case or upper case. It doesn't matter.
     4. After writing the objective, there must be a "s.t." line.
